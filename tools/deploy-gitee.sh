@@ -20,20 +20,31 @@ HTTP=$(curl -s -o /tmp/gitee_repo.json -w "%{http_code}" \
   -H "Content-Type: application/json" \
   -d "{\"name\":\"$REPO\",\"description\":\"幼儿围棋陪学网站（零基础家长陪学型）\",\"private\":false,\"auto_init\":false,\"has_issues\":false,\"has_wiki\":false}")
 
-if [ "$HTTP" = "201" ]; then
-  echo "    仓库创建成功"
-elif [ "$HTTP" = "400" ] || [ "$HTTP" = "409" ]; then
-  echo "    仓库已存在，直接推送"
-elif grep -q "仓库级" /tmp/gitee_repo.json 2>/dev/null; then
+if grep -q "仓库级" /tmp/gitee_repo.json 2>/dev/null; then
   echo "    [!] 这个令牌是「仓库级」的，无权新建仓库。"
-  echo "    请先在网页创建好公开仓库，并把令牌的作用范围改成「全部仓库」，再重跑本脚本。"
-  echo "    网页创建仓库：https://gitee.com/projects/new → 公开 → 不要勾选任何初始化文件"
+  echo "    请把令牌的作用范围改成「全部仓库」后重跑本脚本。"
+  echo "    令牌页面：https://gitee.com/profile/personal_access_tokens"
   exit 1
+elif [ "$HTTP" = "201" ]; then
+  echo "    仓库创建成功"
+elif grep -q "已存在\|exist" /tmp/gitee_repo.json 2>/dev/null; then
+  echo "    仓库已存在，直接推送"
 else
   echo "    [!] 创建仓库返回 HTTP $HTTP："
   head -c 400 /tmp/gitee_repo.json; echo
-  echo "    若提示令牌无效，请重新生成令牌并确认勾选了 projects 权限、作用范围选「全部仓库」。"
+  echo "    请确认令牌勾选了 projects 权限、作用范围选「全部仓库」。"
   exit 1
+fi
+
+# API 建出来的仓库默认是私有的，Pages 要求公开 —— 必须显式改一次
+curl -s -o /tmp/gitee_pub.json --max-time 30 -X PATCH \
+  "https://gitee.com/api/v5/repos/$USER/$REPO?access_token=$TOKEN" \
+  -H "Content-Type: application/json" \
+  -d "{\"name\":\"$REPO\",\"private\":false}"
+if grep -q '"private":false' /tmp/gitee_pub.json 2>/dev/null; then
+  echo "    仓库可见性：公开 ✓（Pages 要求）"
+else
+  echo "    [!] 未能自动设为公开，请到网页 仓库→管理→仓库设置 手动改为开源"
 fi
 
 cd "$(dirname "$0")/.."
@@ -46,7 +57,11 @@ echo "==> 3/4 关联并推送 ..."
 git remote remove origin 2>/dev/null || true
 git remote add origin "https://$USER:$TOKEN@gitee.com/$USER/$REPO.git"
 git branch -M main
-git push -u origin main --force
+if ! git push -u origin main 2>/tmp/push_err.log; then
+  echo "    普通推送失败，尝试强推（会覆盖网页端的改动）："
+  cat /tmp/push_err.log | tail -3
+  git push -u origin main --force
+fi
 
 echo
 echo "==> 4/4 推送完成！"

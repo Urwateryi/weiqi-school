@@ -7,36 +7,38 @@
 - 方式一（推荐）：在本目录执行 `python3 -m http.server 8080`，浏览器打开 http://localhost:8080
 - 方式二：直接双击 `index.html`（功能都在，只是换设备时的进度保存依赖浏览器环境）
 
-## 部署到 Gitee Pages（一次配置，长期可用）
+## 已上线
 
-### 一键脚本（推荐）
+- 仓库：https://gitee.com/urwater/weiqi-school
+- 网址（Pages 开启后）：https://urwater.gitee.io/weiqi-school/
+
+## 部署到 Gitee Pages
+
+### 一键脚本（更新内容后跑它）
 
 ```bash
 bash tools/deploy-gitee.sh <Gitee用户名> <私人令牌> [仓库名]
-# 示例
-bash tools/deploy-gitee.sh zhangsan 1a2b3c4d5e6f7g8 weiqi-school
+# 本项目的实际命令
+bash tools/deploy-gitee.sh urwater <你的令牌> weiqi-school
 ```
 
-脚本会自动建仓库、提交、推送，最后打印 Pages 开启步骤。
-令牌在 Gitee 网页 → 头像 → 设置 → 私人令牌 → 生成新令牌，**必须勾选 `projects` 权限**。
+脚本会：建仓库（若无）→ **强制设为公开** → 提交 → 推送 → 打印 Pages 步骤。
 
-### 手动步骤
+### 令牌的三个坑（都踩过）
 
-1. 在 https://gitee.com 新建仓库，**不要**勾选任何模板/初始化文件
-2. 在本目录执行：
-   ```bash
-   git init
-   git add .
-   git commit -m "小围棋启蒙站第一版"
-   git remote add origin git@gitee.com:<你的用户名>/weiqi-school.git
-   git push -u origin main
-   ```
-3. 打开仓库页面 →「服务」→「Gitee Pages」→ 部署分支选 `main`，部署目录填 `/` → 点「启动」
-4. 打开给你的网址即可
+1. **作用范围必须选「全部仓库」**。选了「指定仓库」的令牌是仓库级的，无法建新仓库，API 会返回 `仓库级私人令牌无权执行此操作`
+2. **必须勾选 `projects` 权限**
+3. **API 建出来的仓库默认是私有的**，脚本已自动 PATCH 改成公开（Pages 强制要求公开）
 
-### 三条硬性规则（踩过坑）
+### 开启 Pages（只能网页操作，API 不支持）
 
-- **必须公开仓库**：私有仓库用不了免费 Pages（仓库 → 管理 → 开源）
+1. 打开 https://gitee.com/urwater/weiqi-school
+2. 顶部菜单「服务」→「Gitee Pages」
+3. 部署分支选 `main`，部署目录填 `/` → 点「启动」
+4. 网址：https://urwater.gitee.io/weiqi-school/
+
+### 另外两条硬规则
+
 - **必须实名认证**：Gitee Pages 强制要求，首次提交后审核约 1 个工作日
 - **推送后要点「更新」**：免费版不会自动重新部署，改完代码要回 Pages 页面点一次
 
