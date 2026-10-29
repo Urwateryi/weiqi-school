@@ -12,6 +12,24 @@
 - 仓库：https://gitee.com/urwater/weiqi-school
 - 网址（Pages 开启后）：https://urwater.gitee.io/weiqi-school/
 
+## 部署到 GitHub Pages（推荐，免实名）
+
+```bash
+bash tools/deploy-github.sh <GitHub用户名> [仓库名] [token]
+# 例：bash tools/deploy-github.sh urwater weiqi-school
+```
+
+前置条件（一次性）：把本机 SSH 公钥添加到 https://github.com/settings/keys
+
+```bash
+cat ~/.ssh/id_ed25519.pub | pbcopy   # 复制后粘贴到 GitHub
+```
+
+推送走 **SSH(22 端口)**：本机访问 `github.com` 的 HTTPS 会走代理 502，SSH 通道正常。
+开启 Pages：仓库 → Settings → Pages → Source 选 `Deploy from a branch` → 分支 `main` / 目录 `/ (root)` → Save。
+网址形如 `https://<用户名>.github.io/<仓库名>/`，**推送后自动重新部署**（不像 Gitee 要手动点更新）。
+仓库必须 Public。
+
 ## 部署到 Gitee Pages
 
 ### 一键脚本（更新内容后跑它）
