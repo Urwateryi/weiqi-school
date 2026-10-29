@@ -239,8 +239,7 @@
       board.fromSpec(spec, { marks: marks, interactive: !isButton(q), showLibs: q.showLibs || (q.type === 'libPoint' || q.type === 'pickStone') });
       board.setTurn(moverOf(q));
       say(q.prompt, '');
-      var noBoard = isButton(q) && !(q.b && q.b.length) && !(q.w && q.w.length);
-      el.querySelector('.board-box').style.display = noBoard ? 'none' : '';
+      /* 选择/判断题也保留棋盘（显示空盘），避免布局突然收起让孩子以为页面刷新了 */
       el.querySelector('.tray').style.display = isButton(q) ? 'none' : '';
 
       var opts2 = null;

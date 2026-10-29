@@ -190,5 +190,8 @@
     var d = Progress.load();
     d.visits = (d.visits || 0) + 1;
     Progress.save();
+    /* 防止拖拽棋子没落到棋盘上时，浏览器用拖拽数据跳转页面（看起来像"页面被刷新/跳走"） */
+    window.addEventListener('dragover', function (e) { e.preventDefault(); });
+    window.addEventListener('drop', function (e) { e.preventDefault(); });
   });
 })(window);
