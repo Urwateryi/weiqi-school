@@ -18,16 +18,21 @@ echo "==> 1/4 检查/创建 Gitee 仓库 $REPO ..."
 HTTP=$(curl -s -o /tmp/gitee_repo.json -w "%{http_code}" \
   -X POST "https://gitee.com/api/v5/user/repos?access_token=$TOKEN" \
   -H "Content-Type: application/json" \
-  -d "{\"name\":\"$REPO\",\"description\":\"幼儿围棋陪学网站（零基础家长陪学型）\",\"public\":true,\"auto_init\":false,\"has_issues\":false,\"has_wiki\":false,\"license\":\"MIT\"}")
+  -d "{\"name\":\"$REPO\",\"description\":\"幼儿围棋陪学网站（零基础家长陪学型）\",\"private\":false,\"auto_init\":false,\"has_issues\":false,\"has_wiki\":false}")
 
 if [ "$HTTP" = "201" ]; then
   echo "    仓库创建成功"
 elif [ "$HTTP" = "400" ] || [ "$HTTP" = "409" ]; then
-  echo "    仓库已存在，直接推送（若报错请确认仓库归属与令牌权限）"
+  echo "    仓库已存在，直接推送"
+elif grep -q "仓库级" /tmp/gitee_repo.json 2>/dev/null; then
+  echo "    [!] 这个令牌是「仓库级」的，无权新建仓库。"
+  echo "    请先在网页创建好公开仓库，并把令牌的作用范围改成「全部仓库」，再重跑本脚本。"
+  echo "    网页创建仓库：https://gitee.com/projects/new → 公开 → 不要勾选任何初始化文件"
+  exit 1
 else
   echo "    [!] 创建仓库返回 HTTP $HTTP："
   head -c 400 /tmp/gitee_repo.json; echo
-  echo "    若提示令牌无效，请重新生成令牌并确认勾选了 projects 权限。"
+  echo "    若提示令牌无效，请重新生成令牌并确认勾选了 projects 权限、作用范围选「全部仓库」。"
   exit 1
 fi
 
