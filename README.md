@@ -9,17 +9,39 @@
 
 ## 部署到 Gitee Pages（一次配置，长期可用）
 
-1. 在 https://gitee.com 新建仓库（如 `weiqi-kids`），**不要**勾选任何模板/初始化文件
+### 一键脚本（推荐）
+
+```bash
+bash tools/deploy-gitee.sh <Gitee用户名> <私人令牌> [仓库名]
+# 示例
+bash tools/deploy-gitee.sh zhangsan 1a2b3c4d5e6f7g8 weiqi-school
+```
+
+脚本会自动建仓库、提交、推送，最后打印 Pages 开启步骤。
+令牌在 Gitee 网页 → 头像 → 设置 → 私人令牌 → 生成新令牌，**必须勾选 `projects` 权限**。
+
+### 手动步骤
+
+1. 在 https://gitee.com 新建仓库，**不要**勾选任何模板/初始化文件
 2. 在本目录执行：
    ```bash
    git init
    git add .
    git commit -m "小围棋启蒙站第一版"
-   git remote add origin git@gitee.com:<你的用户名>/weiqi-kids.git
-   git push -u origin master
+   git remote add origin git@gitee.com:<你的用户名>/weiqi-school.git
+   git push -u origin main
    ```
-3. 打开仓库页面 →「服务」→「Gitee Pages」→ 部署分支选 `master`，部署目录留空（根目录）→ 点「启动」
-4. 打开给你的网址即可（Gitee Pages 需要账号实名认证；免费版每次 push 后要回到 Pages 页面点一次「更新」）
+3. 打开仓库页面 →「服务」→「Gitee Pages」→ 部署分支选 `main`，部署目录填 `/` → 点「启动」
+4. 打开给你的网址即可
+
+### 三条硬性规则（踩过坑）
+
+- **必须公开仓库**：私有仓库用不了免费 Pages（仓库 → 管理 → 开源）
+- **必须实名认证**：Gitee Pages 强制要求，首次提交后审核约 1 个工作日
+- **推送后要点「更新」**：免费版不会自动重新部署，改完代码要回 Pages 页面点一次
+
+> 仓库名建议用英文。`自学围棋` 这类中文名会让网址变成
+> `https://用户名.gitee.io/%E8%87%AA%E5%AD%A6%E5%9B%B4%E6%A3%8B/`，在微信里又长又容易被截断。
 
 > 仓库里已有 `.nojekyll`，避免 Pages 忽略以下划线开头的文件。
 
