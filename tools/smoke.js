@@ -8,7 +8,8 @@ const ROOT = path.join(__dirname, '..');
 
 const pages = [
   'index.html', 'textbook/index.html', 'lesson/index.html?id=p01',
-  'training/index.html', 'exercises/index.html', 'parents/index.html', 'progress/index.html'
+  'training/index.html', 'exercises/index.html', 'parents/index.html',
+  'progress/index.html', 'tricks/index.html', 'parents/difficulty.html'
 ];
 
 const errors = [];
@@ -28,7 +29,7 @@ function load(file, query) {
     const w = dom.window;
     await new Promise(r => setTimeout(r, 300));
     const navCount = w.document.querySelectorAll('.navlist a').length;
-    if (navCount !== 6) errors.push(`${p}: 导航渲染异常 (${navCount})`);
+    if (navCount !== 7) errors.push(`${p}: 导航渲染异常 (${navCount})`);
     dom.window.close();
   }
   console.log('页面加载检查完成：' + pages.length + ' 个');

@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>妙招口诀 · 小围棋</title>
+<link rel="stylesheet" href="../assets/css/main.css">
+</head>
+<body>
+<div id="shell"></div>
+<div class="wrap">
+  <h1>🧙 妙招口诀</h1>
+  <p class="muted">用一句口诀 + 一个夸张的比喻，把难懂的知识点讲明白。家长先看懂，再用自己的话讲给孩子。</p>
+
+  <div class="card warm">
+    <input id="search" class="search-box" type="search" placeholder="🔍 搜一搜：比如 打劫、征吃、眼、对杀">
+    <div class="btn-row" style="margin-top:10px">
+      <button class="btn small" data-g="gen">通用口诀</button>
+      <button class="btn small" data-g="main">启蒙主线</button>
+      <button class="btn small" data-g="adv">课本难点</button>
+    </div>
+  </div>
+
+  <h2>🎯 通用口诀（每课都能用）</h2>
+  <div id="boxGen"></div>
+
+  <h2>📗 启蒙主线（按课）</h2>
+  <div id="boxMain"></div>
+
+  <h2>🔥 课本难点（本学期硬骨头）</h2>
+  <div id="boxAdv"></div>
+
+  <p style="margin-top:18px"><a class="btn btn-purple btn-big" href="../parents/difficulty.html">🔍 难点解析（题意 + 错因）</a></p>
+</div>
+<footer>小围棋 · 幼儿围棋陪学（本地保存进度，无需联网）</footer>
+
+<script src="../assets/js/engine.js"></script>
+<script src="../data/curriculum.js"></script>
+<script src="../data/tricks.js"></script>
+<script src="../assets/js/board.js"></script>
+<script src="../assets/js/app.js"></script>
+<script>
+(function () {
+  WQ.shell('tricks');
+  var T = window.WQ_TRICKS || {};
+  var C = window.WQ_CURRICULUM || [];
+
+  function itemHTML(x, tag) {
+    return '<div class="trick-item" data-tag="' + tag + '">' +
+      '<span class="trick-k">' + x.k + '</span>' +
+      '<div class="trick-slogan">' + x.slogan + '</div>' +
+      (x.magic ? '<p class="trick-magic">🪄 ' + x.magic + '</p>' : '') +
+      (x.try ? '<p class="trick-try">🙌 这样玩：' + x.try + '</p>' : '') +
+      (x.oops ? '<p class="trick-oops">⚠️ ' + x.oops + '</p>' : '') +
+      '<button class="btn small trick-one">🔊 念一遍</button>' +
+      '</div>';
+  }
+  function speakItem(x) {
+    WQ.Voice.say(x.k + '。' + x.slogan + '。' + (x.magic || '') + '。' + (x.try || ''), { force: true });
+  }
+
+  function mount(host, list, tag) {
+    var el = document.getElementById(host);
+    el.innerHTML = list.map(function (x) { return itemHTML(x, tag); }).join('');
+    Array.prototype.forEach.call(el.querySelectorAll('.trick-item'), function (node, i) {
+      node.querySelector('.trick-one').onclick = function () { speakItem(list[i]); };
+    });
+  }
+
+  /* 通用 */
+  mount('boxGen', T.gen || [], 'gen');
+
+  /* 主线：按课分组，默认折叠，锚点直达 */
+  var mainHTML = '';
+  C.forEach(function (l) {
+    var arr = T[l.id] || [];
+    if (!arr.length) return;
+    mainHTML += '<details class="parent-box" id="' + l.id + '" style="margin-bottom:12px">' +
+      '<summary>' + l.emoji + ' 第 ' + l.id.slice(1) + ' 课 · ' + l.title +
+      '　<span class="muted">（' + arr.length + ' 条妙招）</span></summary>' +
+      '<div class="body">' + arr.map(function (x) { return itemHTML(x, l.id); }).join('') + '</div>' +
+      '</details>';
+  });
+  document.getElementById('boxMain').innerHTML = mainHTML;
+  Array.prototype.forEach.call(document.querySelectorAll('#boxMain .parent-box'), function (box) {
+    var lid = box.id;
+    var arr = T[lid] || [];
+    Array.prototype.forEach.call(box.querySelectorAll('.trick-item'), function (node, i) {
+      node.querySelector('.trick-one').onclick = function () { speakItem(arr[i]); };
+    });
+  });
+
+  /* 提高篇 */
+  mount('boxAdv', T.adv || [], 'adv');
+
+  /* 锚点：#p05 自动展开 */
+  var hash = (location.hash || '').replace('#', '');
+  if (hash && document.getElementById(hash)) {
+    var target = document.getElementById(hash);
+    target.open = true;
+    target.scrollIntoView({ block: 'center' });
+  }
+
+  /* 搜索：命中即显示，不命中就藏起来 */
+  var box = document.getElementById('search');
+  box.oninput = function () {
+    var kw = box.value.trim().toLowerCase();
+    Array.prototype.forEach.call(document.querySelectorAll('.trick-item'), function (n) {
+      n.style.display = !kw || n.textContent.toLowerCase().indexOf(kw) >= 0 ? '' : 'none';
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('#boxMain .parent-box'), function (d) {
+      if (!kw) { d.open = (d.id === hash); return; }
+      var hit = d.querySelector('.trick-item[style=""]') || Array.prototype.some.call(d.querySelectorAll('.trick-item'), function (n) { return n.style.display !== 'none'; });
+      d.open = !!hit;
+    });
+  };
+
+  /* 分组按钮：滚到对应区块 */
+  Array.prototype.forEach.call(document.querySelectorAll('[data-g]'), function (b) {
+    b.onclick = function () {
+      var g = b.getAttribute('data-g');
+      var el = g === 'gen' ? document.getElementById('boxGen')
+        : g === 'adv' ? document.getElementById('boxAdv')
+          : document.getElementById('boxMain');
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+  });
+})();
+</script>
+</body>
+</html>

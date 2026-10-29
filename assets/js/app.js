@@ -201,6 +201,7 @@
     { href: 'textbook/index.html', t: '教材', k: 'textbook' },
     { href: 'training/index.html', t: '训练', k: 'training' },
     { href: 'exercises/index.html', t: '练习', k: 'exercises' },
+    { href: 'tricks/index.html', t: '妙招', k: 'tricks' },
     { href: 'parents/index.html', t: '家长', k: 'parents' },
     { href: 'progress/index.html', t: '进度', k: 'progress' }
   ];

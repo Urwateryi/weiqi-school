@@ -24,6 +24,15 @@
     <p style="padding:0 14px 14px;margin:0"><button class="btn small" id="parentSay">🔊 念给家长听</button></p>
   </details>
 
+  <div class="card trick-box" id="trickBox">
+    <div class="trick-head">
+      <span class="trick-title">🧙 妙招口诀</span>
+      <button class="btn small" id="trickSay">🔊 念一遍</button>
+    </div>
+    <div id="trickList"></div>
+    <p class="muted" style="margin:10px 0 0"><a href="../tricks/index.html" style="color:#8a5a2b;font-weight:700">📜 看全部妙招（含课本难点）→</a></p>
+  </div>
+
   <h2>① 学一学</h2>
   <div class="card warm">
     <div class="btn-row" id="demoTabs"></div>
@@ -68,6 +77,7 @@
 <script src="../assets/js/engine.js"></script>
 <script src="../data/curriculum.js"></script>
 <script src="../data/explain.js"></script>
+<script src="../data/tricks.js"></script>
 <script src="../assets/js/board.js"></script>
 <script src="../assets/js/app.js"></script>
 <script src="../assets/js/quiz.js"></script>
@@ -130,6 +140,34 @@
     WQ.Voice.say('给家长的话。目标：' + (t.goal || '') + '。可以这样讲：' + (t.say || '') +
       '。孩子常卡在：' + (t.pitfall || ''), { force: true, rate: 0.8 });
   };
+
+  /* ---------- 妙招口诀 ---------- */
+  var tricks = (window.WQ_TRICKS && (window.WQ_TRICKS[lesson.id] || [])) || [];
+  var trickBox = document.getElementById('trickBox');
+  if (!tricks.length) {
+    trickBox.style.display = 'none';
+  } else {
+    document.getElementById('trickList').innerHTML = tricks.map(function (x) {
+      return '<div class="trick-item">' +
+        '<span class="trick-k">' + x.k + '</span>' +
+        '<div class="trick-slogan">' + x.slogan + '</div>' +
+        (x.magic ? '<p class="trick-magic">🪄 ' + x.magic + '</p>' : '') +
+        (x.try ? '<p class="trick-try">🙌 这样玩：' + x.try + '</p>' : '') +
+        (x.oops ? '<p class="trick-oops">⚠️ ' + x.oops + '</p>' : '') +
+        '<button class="btn small trick-one">🔊</button>' +
+        '</div>';
+    }).join('');
+    Array.prototype.forEach.call(trickBox.querySelectorAll('.trick-item'), function (el, i) {
+      el.querySelector('.trick-one').onclick = function () {
+        var x = tricks[i];
+        WQ.Voice.say(x.k + '。' + x.slogan + '。' + (x.magic || ''), { force: true });
+      };
+    });
+    document.getElementById('trickSay').onclick = function () {
+      var txt = tricks.map(function (x) { return x.k + '，' + x.slogan + '。' + (x.magic || ''); }).join(' ');
+      WQ.Voice.say('本课的妙招。' + txt, { force: true });
+    };
+  }
 
   /* ---------- 学一学：演示播放 ---------- */
   var demoBoard = WQBoard.create(document.getElementById('demoBoard'), { size: 9, interactive: false });

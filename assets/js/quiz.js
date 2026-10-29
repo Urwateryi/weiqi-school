@@ -203,12 +203,32 @@
       var lid = q.__lessonId || lessonId;
       return q.explain || ((global.WQ_EXPLAIN || {})[lid + '-' + (q.__index != null ? q.__index : qi)]) || '';
     }
+    /* 本课妙招口诀（邪修理解法） */
+    function trickLine(q) {
+      var lid = q.__lessonId || lessonId;
+      var arr = (global.WQ_TRICKS || {})[lid];
+      if (!arr || !arr.length) return '';
+      var one = (q.trick != null && arr[q.trick]) ? arr[q.trick] : null;
+      var list = one ? [one] : arr.slice(0, 2);
+      return '<p class="q-trick"><b>🧙 妙招：</b>' +
+        list.map(function (x) { return '「' + x.slogan + '」'; }).join('　') +
+        '　<a href="../tricks/index.html#' + lid + '" style="color:#8a5a2b">看全部 ›</a></p>';
+    }
+    function trickText(q) {
+      var lid = q.__lessonId || lessonId;
+      var arr = (global.WQ_TRICKS || {})[lid];
+      if (!arr || !arr.length) return '';
+      var one = (q.trick != null && arr[q.trick]) ? arr[q.trick] : null;
+      var list = one ? [one] : arr.slice(0, 2);
+      return '妙招：' + list.map(function (x) { return x.slogan + '。' + (x.magic || ''); }).join(' ');
+    }
     function showExplain(extra) {
       var q = current;
       if (!q) return;
       var txt = getExplain(q);
       if (extra) extra = '<p style="margin:6px 0 0"><b>🧐 你刚才那手棋：</b>' + extra + '</p>';
-      elExplain.innerHTML = (txt ? '<b>📖 讲解：</b>' + txt : '<b>📖 讲解：</b>这道题先自己想一想，做出来再看更有收获。') + (extra || '');
+      elExplain.innerHTML = (txt ? '<b>📖 讲解：</b>' + txt : '<b>📖 讲解：</b>这道题先自己想一想，做出来再看更有收获。') +
+        (extra || '') + trickLine(q);
       elExplain.style.display = '';
       return txt;
     }
@@ -216,7 +236,7 @@
       if (!current) return;
       if (elExplain.style.display === 'none') {
         var t = showExplain('');
-        if (t) WQ.Voice.say('讲解。' + t);   // 讲解也读出来，不识字也能听
+        if (t) WQ.Voice.say('讲解。' + t + '。' + trickText(current));   // 讲解 + 妙招都读出来
       } else {
         WQ.Voice.stop();
         elExplain.style.display = 'none';
