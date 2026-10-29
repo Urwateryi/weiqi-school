@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>小围棋 · 幼儿围棋陪学</title>
+<link rel="stylesheet" href="assets/css/main.css">
+</head>
+<body>
+<div id="shell"></div>
+<div class="wrap">
+  <div class="card warm" style="text-align:center">
+    <div style="font-size:56px">🐼🐯</div>
+    <h1 style="margin:6px 0">小 围 棋</h1>
+    <p class="muted">和爸爸妈妈一起，从零开始学围棋</p>
+    <p style="font-size:22px;font-weight:700">⭐ 已得 <span id="stars">0</span> 颗星 · 学完 <span id="done">0</span> / 20 课</p>
+    <div class="progress-line" style="margin:10px 0"><i id="bar" style="width:0%"></i></div>
+  </div>
+
+  <a class="home-btn wide" id="continueBtn" href="lesson/index.html?id=p01">▶ 继续学习（第 1 课）</a>
+
+  <div class="home-grid">
+    <a class="home-btn c1" href="textbook/index.html"><span class="emo">📚</span>教材</a>
+    <a class="home-btn c2" href="training/index.html"><span class="emo">🎬</span>训练</a>
+    <a class="home-btn c3" href="exercises/index.html"><span class="emo">🎯</span>练习</a>
+    <a class="home-btn c4" href="parents/index.html"><span class="emo">👨‍👩‍👦</span>家长指南</a>
+    <a class="home-btn c5" href="progress/index.html"><span class="emo">🏅</span>学习进度</a>
+  </div>
+
+  <a class="home-btn wide" href="parents/difficulty.html" style="background:#8a6bd8;color:#fff">🔍 本学期课本难点解析（题意 + 难点 + 错因分析）</a>
+
+  <div class="card">
+    <h2 style="margin-top:4px">怎么学？</h2>
+    <p>① <b>学一学</b>：看点小动画，知道今天学什么。<br>
+       ② <b>玩一玩</b>：随便摆棋子，摸一摸、试一试。<br>
+       ③ <b>练一练</b>：三道小题，做对得一颗 ⭐。</p>
+    <p class="muted">爸爸妈妈不会围棋也没关系：每节课都点开"家长 30 秒速读"，照着念一句话就行。</p>
+  </div>
+</div>
+<footer>小围棋 · 幼儿围棋陪学（进度保存在这台设备上）</footer>
+
+<script src="assets/js/engine.js"></script>
+<script src="data/curriculum.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+(function () {
+  WQ.shell('home');
+  var C = window.WQ_CURRICULUM;
+  var d = WQ.Progress.load();
+  document.getElementById('stars').textContent = WQ.Progress.totalStars();
+  var done = WQ.Progress.doneCount(C);
+  document.getElementById('done').textContent = done;
+  document.getElementById('bar').style.width = Math.round(done / C.length * 100) + '%';
+
+  var last = d.last;
+  var nextId = last || 'p01';
+  if (last) {
+    var i = C.findIndex(function (l) { return l.id === last; });
+    if (i >= 0 && WQ.Progress.isDone(last) && i + 1 < C.length) nextId = C[i + 1].id;
+  }
+  var li = C.findIndex(function (l) { return l.id === nextId; });
+  document.getElementById('continueBtn').href = 'lesson/index.html?id=' + nextId;
+  document.getElementById('continueBtn').textContent = '▶ 继续学习（第 ' + (li + 1) + ' 课 ' + C[li].title + '）';
+})();
+</script>
+</body>
+</html>

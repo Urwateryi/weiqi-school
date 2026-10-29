@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>学习进度 · 小围棋</title>
+<link rel="stylesheet" href="../assets/css/main.css">
+</head>
+<body>
+<div id="shell"></div>
+<div class="wrap">
+  <h1>🏅 学习进度</h1>
+  <div class="card warm">
+    <p style="font-size:22px;font-weight:700">⭐ 共 <span id="total">0</span> 颗星 · 学完 <span id="done">0</span> / 20 课</p>
+    <div class="progress-line" style="margin:10px 0"><i id="bar" style="width:0%"></i></div>
+    <p class="muted" id="lastInfo"></p>
+  </div>
+
+  <h2>课程地图</h2>
+  <div id="map"></div>
+
+  <h2>错题本</h2>
+  <div class="card" id="wrongCard"></div>
+
+  <div class="card">
+    <h2 style="margin-top:0">数据</h2>
+    <p class="muted">进度只存在这台设备的浏览器里，不上传任何服务器。</p>
+    <div class="btn-row">
+      <button class="btn btn-blue" id="exportBtn">📤 导出进度（复制）</button>
+      <button class="btn" id="resetBtn">🧹 清空重来</button>
+    </div>
+    <textarea id="exportBox" style="width:100%;height:90px;margin-top:10px;display:none;font-size:13px"></textarea>
+  </div>
+</div>
+<footer>小围棋 · 幼儿围棋陪学</footer>
+
+<script src="../assets/js/engine.js"></script>
+<script src="../data/curriculum.js"></script>
+<script src="../assets/js/app.js"></script>
+<script>
+(function () {
+  WQ.shell('progress');
+  var C = window.WQ_CURRICULUM;
+  var total = WQ.Progress.totalStars();
+  var done = WQ.Progress.doneCount(C);
+  document.getElementById('total').textContent = total;
+  document.getElementById('done').textContent = done;
+  document.getElementById('bar').style.width = Math.round(done / C.length * 100) + '%';
+
+  var d = WQ.Progress.load();
+  var li = C.findIndex(function (l) { return l.id === d.last; });
+  document.getElementById('lastInfo').textContent = d.last ? ('最近学到：第 ' + (li + 1) + ' 课 ' + C[li].title) : '还没开始，去首页点"继续学习"吧。';
+
+  var map = document.getElementById('map');
+  C.forEach(function (l, i) {
+    var stars = WQ.Progress.stars(l.id);
+    var a = document.createElement('a');
+    a.className = 'lesson-item' + (WQ.Progress.isDone(l.id) ? ' done' : '');
+    a.href = '../lesson/index.html?id=' + l.id;
+    a.innerHTML = '<div class="no">' + (i + 1) + '</div>' +
+      '<div class="txt"><b>' + l.emoji + ' ' + l.title + '</b><span>' + l.stageName + '</span></div>' +
+      '<div class="stars">' + stars.map(function (v) { return v ? '⭐' : '<span class="dim">☆</span>'; }).join('') + '</div>';
+    map.appendChild(a);
+  });
+
+  var wrong = WQ.Progress.wrongList();
+  var wc = document.getElementById('wrongCard');
+  if (!wrong.length) {
+    wc.innerHTML = '<p>现在没有错题，真棒！</p>';
+  } else {
+    var html = '<p class="muted">共 ' + wrong.length + ' 道，做对 2 次自动移出。</p><table>';
+    wrong.forEach(function (w) {
+      var p = WQ.parseQid(w.id);
+      var l = C.find(function (x) { return x.id === p.lessonId; });
+      var title = l ? l.title : p.lessonId;
+      var qi = l && l.quiz[p.index] ? l.quiz[p.index].prompt : w.id;
+      html += '<tr><td>' + title + ' 第' + (p.index + 1) + '题</td><td>' + qi + '</td><td>错 ' + w.count + ' 次</td></tr>';
+    });
+    html += '</table><p style="margin-top:10px"><a class="btn btn-green" href="../exercises/index.html">去错题重练</a></p>';
+    wc.innerHTML = html;
+  }
+
+  document.getElementById('exportBtn').onclick = function () {
+    var box = document.getElementById('exportBox');
+    box.style.display = '';
+    box.value = JSON.stringify(WQ.Progress.load());
+    box.select();
+    try { document.execCommand('copy'); } catch (e) {}
+  };
+  document.getElementById('resetBtn').onclick = function () {
+    if (confirm('确定清空所有星星和错题吗？（孩子要从头再来）')) {
+      WQ.Progress.reset();
+      location.reload();
+    }
+  };
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>训练 · 小围棋</title>
+<link rel="stylesheet" href="../assets/css/main.css">
+</head>
+<body>
+<div id="shell"></div>
+<div class="wrap">
+  <h1>🎬 训练场</h1>
+  <p class="muted">想摆就摆，想看动画就点下面的小按钮。</p>
+
+  <h2>自由摆棋</h2>
+  <div class="card warm">
+    <div class="board-box"><div id="sandBoard"></div></div>
+    <div class="tray">
+      <div class="piece black" id="tB">黑</div>
+      <div class="piece white" id="tW">白</div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-blue" id="libBtn">👁 显示气</button>
+      <button class="btn" id="undoBtn">↩ 悔一手</button>
+      <button class="btn" id="clearBtn">🧹 全部拿走</button>
+    </div>
+    <p class="muted" id="sandTip">提示：点到禁入点会被拦住，正好练一练第 9 课。</p>
+  </div>
+
+  <h2>棋形动画库</h2>
+  <p class="muted">点一个动画，再按"播放"，看棋子怎么动。</p>
+  <div id="demoList"></div>
+
+  <div class="card warm" id="demoCard" style="display:none">
+    <p id="dTitle" style="font-size:20px;font-weight:700"></p>
+    <div class="board-box"><div id="dBoard"></div></div>
+    <p class="muted" id="dNote"></p>
+    <div class="btn-row">
+      <button class="btn" id="dPrev">◀ 上一手</button>
+      <button class="btn btn-primary" id="dPlay">▶ 播放</button>
+      <button class="btn" id="dNext">下一手 ▶</button>
+    </div>
+  </div>
+</div>
+<footer>小围棋 · 幼儿围棋陪学</footer>
+
+<script src="../assets/js/engine.js"></script>
+<script src="../data/curriculum.js"></script>
+<script src="../assets/js/board.js"></script>
+<script src="../assets/js/app.js"></script>
+<script>
+(function () {
+  WQ.shell('training');
+  var C = window.WQ_CURRICULUM;
+  var E = WQEngine, N = 9;
+
+  /* 自由摆棋 */
+  var sand = WQBoard.create(document.getElementById('sandBoard'), { size: N, interactive: true });
+  var hist = [], turn = E.BLACK, showLibs = false;
+  function markTray() {
+    document.getElementById('tB').className = 'piece black' + (turn === E.BLACK ? ' on' : '');
+    document.getElementById('tW').className = 'piece white' + (turn === E.WHITE ? ' on' : '');
+  }
+  function reset() { hist = []; turn = E.BLACK; sand.load({ board: new Array(N * N).fill(0), interactive: true, showLibs: showLibs }); markTray(); }
+  sand.onPoint = function (i, how, dragColor) {
+    var color = dragColor === 'W' ? E.WHITE : (dragColor === 'B' ? E.BLACK : turn);
+    var res = sand.play(i, color);
+    if (!res.ok) {
+      WQ.Sound.bad();
+      document.getElementById('sandTip').textContent = '⚠ ' + (res.reason === 'suicide' ? '禁入点：下进去就没气啦' : res.reason === 'ko' ? '打劫中，先去别处下一手' : '这里已经有子啦');
+      return;
+    }
+    WQ.Sound.place();
+    if (res.captured && res.captured.length) WQ.Sound.capture();
+    hist.push({ board: sand.board().slice(), turn: turn });
+    turn = color === E.BLACK ? E.WHITE : E.BLACK;
+    markTray();
+    if (showLibs) sand.setShowLibs(true);
+  };
+  document.getElementById('libBtn').onclick = function () { showLibs = !showLibs; sand.setShowLibs(showLibs); this.textContent = showLibs ? '👁 隐藏气' : '👁 显示气'; };
+  document.getElementById('undoBtn').onclick = function () { if (!hist.length) return; var h = hist.pop(); sand.load({ board: h.board, interactive: true, showLibs: showLibs }); turn = h.turn; markTray(); };
+  document.getElementById('clearBtn').onclick = reset;
+  ['tB', 'tW'].forEach(function (id) {
+    var el = document.getElementById(id);
+    el.setAttribute('draggable', 'true');
+    el.addEventListener('dragstart', function (ev) { ev.dataTransfer.setData('text/plain', id === 'tB' ? 'B' : 'W'); });
+  });
+  reset();
+
+  /* 棋形动画库 */
+  var all = [];
+  C.forEach(function (l, i) { (l.demos || []).forEach(function (d) { all.push({ lesson: l, li: i, d: d }); }); });
+  var list = document.getElementById('demoList');
+  var stage = '';
+  all.forEach(function (item, k) {
+    if (item.lesson.stageName !== stage) {
+      stage = item.lesson.stageName;
+      var h = document.createElement('div');
+      h.className = 'stage-title';
+      h.textContent = '【' + item.lesson.stage + '】' + stage;
+      list.appendChild(h);
+    }
+    var b = document.createElement('button');
+    b.className = 'level-btn';
+    b.style.flex = '0 0 auto';
+    b.style.minWidth = '46%';
+    b.innerHTML = '<span class="lv">' + item.lesson.emoji + '</span>' + item.d.title;
+    b.onclick = function () { open(k); };
+    list.appendChild(b);
+  });
+
+  var dBoard = WQBoard.create(document.getElementById('dBoard'), { size: N, interactive: false });
+  var cur = 0, step = 0, timer = null;
+  function posOf(k, s) {
+    var d = all[k].d;
+    var b = E.boardFromSpec({ size: N, b: d.b, w: d.w });
+    var ko = null, last = null;
+    for (var i = 0; i < s && i < d.moves.length; i++) {
+      var m = d.moves[i];
+      var r = E.play(b, N, E.idx(m[1], m[2], N), m[0] === 'W' ? E.WHITE : E.BLACK, ko);
+      if (r.ok) { b = r.board; ko = r.koPoint; last = E.idx(m[1], m[2], N); }
+    }
+    return { board: b, last: last };
+  }
+  function draw() {
+    var d = all[cur].d, p = posOf(cur, step);
+    dBoard.load({ board: p.board, marks: (d.mark || []).map(function (m) { return { p: m, type: d.markType || 'star' }; }), showLibs: !!d.showLibs, last: p.last, interactive: false });
+    document.getElementById('dTitle').textContent = '第' + (all[cur].li + 1) + '课 · ' + d.title;
+    document.getElementById('dNote').textContent = d.note;
+  }
+  function stop() { if (timer) { clearInterval(timer); timer = null; document.getElementById('dPlay').textContent = '▶ 播放'; } }
+  function open(k) {
+    cur = k; step = 0; stop();
+    document.getElementById('demoCard').style.display = '';
+    draw();
+    document.getElementById('demoCard').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+  document.getElementById('dNext').onclick = function () { stop(); if (step < all[cur].d.moves.length) { step++; draw(); WQ.Sound.place(); } };
+  document.getElementById('dPrev').onclick = function () { stop(); if (step > 0) { step--; draw(); } };
+  document.getElementById('dPlay').onclick = function () {
+    if (timer) { stop(); return; }
+    step = 0; draw(); this.textContent = '⏸ 暂停';
+    timer = setInterval(function () { if (step >= all[cur].d.moves.length) { stop(); return; } step++; draw(); WQ.Sound.place(); }, 900);
+  };
+})();
+</script>
+</body>
+</html>

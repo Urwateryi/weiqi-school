@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>上课 · 小围棋</title>
+<link rel="stylesheet" href="../assets/css/main.css">
+</head>
+<body>
+<div id="shell"></div>
+<div class="wrap">
+  <p id="crumb" class="muted"></p>
+  <h1 id="title"></h1>
+  <p id="goal" class="muted"></p>
+
+  <details class="parent-box" id="parentBox">
+    <summary>👨‍👩‍👦 家长 30 秒速读（点开）</summary>
+    <div class="body" id="parentBody"></div>
+  </details>
+
+  <h2>① 学一学</h2>
+  <div class="card warm">
+    <div class="btn-row" id="demoTabs"></div>
+    <p class="muted" id="demoTitle" style="font-size:18px;font-weight:700;color:#4a3520"></p>
+    <div class="board-box"><div id="demoBoard"></div></div>
+    <p class="muted" id="demoNote"></p>
+    <div class="btn-row">
+      <button class="btn" id="prevBtn">◀ 上一手</button>
+      <button class="btn btn-primary" id="playBtn">▶ 播放</button>
+      <button class="btn" id="nextBtn">下一手 ▶</button>
+    </div>
+    <p class="muted" id="demoStep"></p>
+  </div>
+
+  <h2>② 玩一玩</h2>
+  <div class="card warm">
+    <p class="muted" id="playTip">随便摆一摆，摸摸棋子。点"显示气"看看气在哪里，点"重来"重新开始。</p>
+    <div class="board-box"><div id="playBoard"></div></div>
+    <div class="tray">
+      <div class="piece black" id="trayB">黑</div>
+      <div class="piece white" id="trayW">白</div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-blue" id="libBtn">👁 显示气</button>
+      <button class="btn" id="undoBtn">↩ 悔一手</button>
+      <button class="btn" id="clearBtn">🧹 重来</button>
+    </div>
+  </div>
+
+  <h2>③ 练一练</h2>
+  <div class="card" id="quizBox"></div>
+
+  <div class="btn-row" style="margin-top:18px">
+    <a class="btn" id="prevLesson" href="#">◀ 上一课</a>
+    <a class="btn btn-green" id="nextLesson" href="#">下一课 ▶</a>
+  </div>
+  <p style="margin-top:16px"><a class="btn btn-purple btn-big" href="../textbook/index.html">📚 回到课程表</a></p>
+</div>
+<footer>小围棋 · 幼儿围棋陪学（本地保存进度，无需联网）</footer>
+
+<script src="../assets/js/engine.js"></script>
+<script src="../data/curriculum.js"></script>
+<script src="../data/explain.js"></script>
+<script src="../assets/js/board.js"></script>
+<script src="../assets/js/app.js"></script>
+<script src="../assets/js/quiz.js"></script>
+<script>
+(function () {
+  var C = window.WQ_CURRICULUM;
+  var id = WQ.param('id') || C[0].id;
+  var idx = C.findIndex(function (l) { return l.id === id; });
+  if (idx < 0) idx = 0;
+  var lesson = C[idx];
+
+  WQ.shell('textbook');
+  WQ.Progress.setLast(lesson.id);
+
+  document.title = '第' + (idx + 1) + '课 ' + lesson.title + ' · 小围棋';
+  document.getElementById('crumb').textContent = '第 ' + (idx + 1) + ' 课 · ' + lesson.stageName;
+  document.getElementById('title').textContent = lesson.emoji + ' 第' + (idx + 1) + '课 ' + lesson.title;
+  document.getElementById('goal').textContent = '本课目标：' + lesson.goal;
+
+  var t = lesson.tip || {};
+  document.getElementById('parentBody').innerHTML =
+    '<p><b>本课目标：</b>' + (t.goal || '') + '</p>' +
+    '<p><b>一句话讲给孩子：</b>' + (t.say || '') + '</p>' +
+    '<p><b>孩子常卡在哪：</b>' + (t.pitfall || '') + '</p>' +
+    '<p><b>陪学小活动：</b>' + (t.do || '') + '</p>';
+
+  /* ---------- 学一学：演示播放 ---------- */
+  var demoBoard = WQBoard.create(document.getElementById('demoBoard'), { size: 9, interactive: false });
+  var dIdx = 0, dStep = 0, timer = null;
+  var demos = lesson.demos || [];
+
+  function demoTabs() {
+    var box = document.getElementById('demoTabs');
+    box.innerHTML = '';
+    demos.forEach(function (d, i) {
+      var b = document.createElement('button');
+      b.className = 'btn' + (i === dIdx ? ' btn-primary' : '');
+      b.textContent = (i + 1) + '. ' + d.title;
+      b.onclick = function () { dIdx = i; dStep = 0; stop(); drawDemo(); demoTabs(); };
+      box.appendChild(b);
+    });
+  }
+
+  function posAt(step) {
+    var d = demos[dIdx];
+    var b = WQEngine.boardFromSpec({ size: 9, b: d.b, w: d.w });
+    var ko = null, last = null;
+    for (var i = 0; i < step && i < d.moves.length; i++) {
+      var m = d.moves[i];
+      var res = WQEngine.play(b, 9, WQEngine.idx(m[1], m[2], 9), m[0] === 'W' ? WQEngine.WHITE : WQEngine.BLACK, ko);
+      if (res.ok) { b = res.board; ko = res.koPoint; last = WQEngine.idx(m[1], m[2], 9); }
+    }
+    return { board: b, last: last };
+  }
+
+  function drawDemo() {
+    var d = demos[dIdx];
+    var p = posAt(dStep);
+    var marks = (d.mark || []).map(function (m) { return { p: m, type: d.markType || 'star' }; });
+    demoBoard.load({ board: p.board, marks: marks, showLibs: !!d.showLibs, last: p.last, interactive: false });
+    document.getElementById('demoTitle').textContent = d.title;
+    document.getElementById('demoNote').textContent = d.note;
+    document.getElementById('demoStep').textContent = '第 ' + dStep + ' / ' + d.moves.length + ' 手' +
+      (dStep === d.moves.length ? '（演示结束）' : '');
+  }
+
+  function stop() { if (timer) { clearInterval(timer); timer = null; document.getElementById('playBtn').textContent = '▶ 播放'; } }
+  document.getElementById('nextBtn').onclick = function () {
+    stop();
+    if (dStep < demos[dIdx].moves.length) { dStep++; drawDemo(); WQ.Sound.place(); }
+  };
+  document.getElementById('prevBtn').onclick = function () {
+    stop();
+    if (dStep > 0) { dStep--; drawDemo(); }
+  };
+  document.getElementById('playBtn').onclick = function () {
+    if (timer) { stop(); return; }
+    dStep = 0; drawDemo();
+    document.getElementById('playBtn').textContent = '⏸ 暂停';
+    timer = setInterval(function () {
+      if (dStep >= demos[dIdx].moves.length) { stop(); return; }
+      dStep++; drawDemo(); WQ.Sound.place();
+    }, 900);
+  };
+  demoTabs(); drawDemo();
+
+  /* ---------- 玩一玩：自由摆棋 ---------- */
+  var playBoard = WQBoard.create(document.getElementById('playBoard'), { size: 9, interactive: true });
+  var history = [];
+  var turn = WQEngine.BLACK;
+  var showLibs = false;
+  var startSpec = demos[0] ? { b: demos[0].b || [], w: demos[0].w || [] } : { b: [], w: [] };
+
+  function resetPlay() {
+    history = [];
+    turn = WQEngine.BLACK;
+    playBoard.fromSpec({ size: 9, b: startSpec.b, w: startSpec.w }, { interactive: true, showLibs: showLibs });
+    markTray();
+  }
+  function markTray() {
+    document.getElementById('trayB').className = 'piece black' + (turn === WQEngine.BLACK ? ' on' : '');
+    document.getElementById('trayW').className = 'piece white' + (turn === WQEngine.WHITE ? ' on' : '');
+  }
+  playBoard.onPoint = function (i, how, dragColor) {
+    var color = dragColor === 'W' ? WQEngine.WHITE : (dragColor === 'B' ? WQEngine.BLACK : turn);
+    var res = playBoard.play(i, color, function () {});
+    if (!res.ok) {
+      WQ.Sound.bad();
+      document.getElementById('playTip').textContent = '⚠ ' + (res.reason === 'suicide' ? '这里是禁入点，下进去就没气啦' : res.reason === 'ko' ? '打劫中，先去别处下一手' : '这里已经有棋子啦');
+      return;
+    }
+    document.getElementById('playTip').textContent = '轮到' + (color === WQEngine.BLACK ? '白' : '黑') + '棋，继续摆吧';
+    history.push({ board: playBoard.board().slice(), turn: turn });
+    turn = color === WQEngine.BLACK ? WQEngine.WHITE : WQEngine.BLACK;
+    markTray();
+    WQ.Sound.place();
+    if (res.captured && res.captured.length) WQ.Sound.capture();
+    if (showLibs) playBoard.setShowLibs(true);
+  };
+  document.getElementById('libBtn').onclick = function () {
+    showLibs = !showLibs;
+    playBoard.setShowLibs(showLibs);
+    this.textContent = showLibs ? '👁 隐藏气' : '👁 显示气';
+  };
+  document.getElementById('undoBtn').onclick = function () {
+    if (!history.length) return;
+    var h = history.pop();
+    playBoard.load({ board: h.board, interactive: true, showLibs: showLibs });
+    turn = h.turn; markTray();
+  };
+  document.getElementById('clearBtn').onclick = resetPlay;
+  resetPlay();
+
+  ['trayB', 'trayW'].forEach(function (id2) {
+    var el = document.getElementById(id2);
+    el.setAttribute('draggable', 'true');
+    el.addEventListener('dragstart', function (ev) { ev.dataTransfer.setData('text/plain', id2 === 'trayB' ? 'B' : 'W'); });
+  });
+
+  /* ---------- 练一练 ---------- */
+  var startQ = Math.max(0, Math.min(2, parseInt(WQ.param('q') || '0', 10)));
+  var qs = lesson.quiz.map(function (q, i) { var c = Object.create(q); c.__index = i; return c; }).slice(startQ);
+  WQQuiz.mount(document.getElementById('quizBox'), { lesson: lesson, questions: qs });
+  if (startQ > 0) {
+    setTimeout(function () {
+      var el = document.getElementById('quizBox');
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 200);
+  }
+
+  /* ---------- 上下课导航 ---------- */
+  var pv = document.getElementById('prevLesson'), nx = document.getElementById('nextLesson');
+  if (idx > 0) pv.href = 'index.html?id=' + C[idx - 1].id; else { pv.textContent = '已是第一课'; pv.className = 'btn'; pv.removeAttribute('href'); }
+  if (idx < C.length - 1) nx.href = 'index.html?id=' + C[idx + 1].id; else { nx.textContent = '已是最后一课'; nx.className = 'btn'; nx.removeAttribute('href'); }
+})();
+</script>
+</body>
+</html>

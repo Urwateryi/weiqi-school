@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>家长指南 · 小围棋</title>
+<link rel="stylesheet" href="../assets/css/main.css">
+</head>
+<body>
+<div id="shell"></div>
+<div class="wrap">
+  <h1>👨‍👩‍👦 家长指南</h1>
+  <p class="muted">完全不会围棋也能陪：每课点开"家长 30 秒速读"，照着念一句话就行。</p>
+
+  <div class="card warm">
+    <h2 style="margin-top:0">🔍 本学期课本难点解析</h2>
+    <p>对照《围棋校园·初级篇》第 1–9 课：每课本题在问什么、难在哪里、孩子常错在哪、辅导话术。<br>
+      <a class="btn btn-purple" href="difficulty.html" style="margin-top:8px">打开难点解析 →</a></p>
+  </div>
+
+  <div class="card warm">
+    <h2 style="margin-top:0">⏱ 每次 15 分钟怎么安排</h2>
+    <table>
+      <tr><th>时间</th><th>做什么</th></tr>
+      <tr><td>2 分钟</td><td>打开"学一学"，看一遍小动画，念一句本课口诀</td></tr>
+      <tr><td>5 分钟</td><td>"玩一玩"：随孩子摆，别纠正太多，让他摸棋子</td></tr>
+      <tr><td>6 分钟</td><td>"练一练"：三道题，做不出来就点"提示"，别直接给答案</td></tr>
+      <tr><td>2 分钟</td><td>夸一句具体的（"你自己找到气了！"），收工</td></tr>
+    </table>
+    <p class="muted">关键：宁可短、不可烦。孩子说不想下了就停，第二天再来。</p>
+  </div>
+
+  <div class="card">
+    <h2 style="margin-top:0">🗣 家长常用话术（照抄）</h2>
+    <p>• "棋子也要呼吸，旁边空的地方就是它的鼻子（气）。"<br>
+       • "把它最后一口气按住，它就睡着啦（提子）。"<br>
+       • "快点跑，跑到空的地方气就变多啦。"<br>
+       • "跳进去会喘不过气，所以这个坑不能下（禁入点）。"<br>
+       • "你拍我一下，我不能马上拍回去，要先去别处玩一手（打劫）。"<br>
+       • "两只眼睛都睁着，怎么推都推不倒（活棋）。"</p>
+  </div>
+
+  <div class="card">
+    <h2 style="margin-top:0">📖 术语速查（家长版）</h2>
+    <table>
+      <tr><th>说法</th><th>意思</th></tr>
+      <tr><td>气</td><td>棋子上下左右紧挨着的空点</td></tr>
+      <tr><td>打吃 / 叫吃</td><td>让对方只剩一口气</td></tr>
+      <tr><td>提子</td><td>堵住最后一口气，把没气的子拿走</td></tr>
+      <tr><td>禁入点</td><td>下进去自己就没气的点（能提子时例外）</td></tr>
+      <tr><td>打劫</td><td>提一子后对方不能马上提回，要隔一手</td></tr>
+      <tr><td>眼</td><td>被自己棋子围住的空点</td></tr>
+      <tr><td>活棋</td><td>一块棋有两只眼，永远吃不掉</td></tr>
+      <tr><td>地（目）</td><td>围住的空点，终局比谁多</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2 style="margin-top:0">❓ 常见问题</h2>
+    <p><b>孩子不认字，能自己玩吗？</b><br>能。题目都有 🔊 读题按钮，点一下会念出来；棋盘操作全是点一点、拖一拖。</p>
+    <p><b>做错了会打击他吗？</b><br>不会。答错只说"再试一次"，不判错、不扣分，做对了才放星星和撒花。</p>
+    <p><b>进度会不会丢？</b><br>存在这台设备的浏览器里（不上传）。别清浏览器数据；换设备需要重新学，或看"学习进度"页的导出。</p>
+    <p><b>和幼儿园延时课的课本对不上？</b><br>本站按零基础正确顺序编排，课本只作对照。打开"教材"页最下面的"课本对照"能看到对应关系。</p>
+  </div>
+
+  <div class="card">
+    <h2 style="margin-top:0">⚙ 设置</h2>
+    <button class="btn btn-primary" id="soundBtn">🔊 音效开关</button>
+    <p class="muted" id="soundState"></p>
+  </div>
+</div>
+<footer>小围棋 · 幼儿围棋陪学</footer>
+
+<script src="../assets/js/engine.js"></script>
+<script src="../data/curriculum.js"></script>
+<script src="../assets/js/app.js"></script>
+<script>
+(function () {
+  WQ.shell('parents');
+  var b = document.getElementById('soundBtn');
+  function sync() {
+    var on = WQ.Sound.on();
+    b.textContent = on ? '🔊 音效：开' : '🔇 音效：关';
+    document.getElementById('soundState').textContent = on ? '落子、提子、答对都有声音。' : '现在静音。';
+  }
+  b.onclick = function () { WQ.Sound.toggle(); sync(); if (WQ.Sound.on()) WQ.Sound.good(); };
+  sync();
+})();
+</script>
+</body>
+</html>

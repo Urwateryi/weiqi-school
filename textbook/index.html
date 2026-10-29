@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>教材 · 小围棋</title>
+<link rel="stylesheet" href="../assets/css/main.css">
+</head>
+<body>
+<div id="shell"></div>
+<div class="wrap">
+  <h1>📚 课程表（20 课）</h1>
+  <p class="muted">按零基础学围棋的正确顺序编排：认识棋盘 → 气 → 吃子 → 逃跑 → 特别规则 → 吃子技巧 → 连接分断 → 死活 → 围地终局。</p>
+  <div id="list"></div>
+
+  <details class="parent-box">
+    <summary>📖 幼儿园课本对照（家长看）</summary>
+    <div class="body" id="tbBody"></div>
+  </details>
+</div>
+<footer>小围棋 · 幼儿围棋陪学</footer>
+
+<script src="../assets/js/engine.js"></script>
+<script src="../data/curriculum.js"></script>
+<script src="../data/textbook.js"></script>
+<script src="../assets/js/app.js"></script>
+<script>
+(function () {
+  WQ.shell('textbook');
+  var C = window.WQ_CURRICULUM;
+  var box = document.getElementById('list');
+  var stage = '';
+  C.forEach(function (l, i) {
+    if (l.stageName !== stage) {
+      stage = l.stageName;
+      var h = document.createElement('div');
+      h.className = 'stage-title';
+      h.textContent = '【' + l.stage + '】' + stage;
+      box.appendChild(h);
+    }
+    var stars = WQ.Progress.stars(l.id);
+    var starTxt = stars.map(function (v) { return v ? '⭐' : '<span class="dim">☆</span>'; }).join('');
+    var a = document.createElement('a');
+    a.className = 'lesson-item' + (WQ.Progress.isDone(l.id) ? ' done' : '');
+    a.href = '../lesson/index.html?id=' + l.id;
+    a.innerHTML = '<div class="no">' + l.emoji + '</div>' +
+      '<div class="txt"><b>第' + (i + 1) + '课 ' + l.title + '</b><span>' + l.goal + '</span></div>' +
+      '<div class="stars">' + starTxt + '</div>';
+    box.appendChild(a);
+  });
+
+  var tb = window.WQ_TEXTBOOK;
+  var html = '<p class="muted">' + tb.note + '</p><table><tr><th>课本内容</th><th>本站对应课程</th></tr>';
+  tb.map.forEach(function (m) { html += '<tr><td>' + m.textbook + '</td><td>' + m.site + '</td></tr>'; });
+  html += '</table>';
+  tb.books.forEach(function (b) {
+    html += '<h3>' + b.name + '（' + b.lessons.length + ' 课）</h3><p class="muted">' + b.lessons.join(' · ') + '</p>';
+  });
+  document.getElementById('tbBody').innerHTML = html;
+})();
+</script>
+</body>
+</html>
