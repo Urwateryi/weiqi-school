@@ -12,10 +12,16 @@
   <p id="crumb" class="muted"></p>
   <h1 id="title"></h1>
   <p id="goal" class="muted"></p>
+  <div class="btn-row" style="margin:8px 0 0">
+    <button class="btn small" id="goalSay">🔊 读目标</button>
+    <button class="voice-chip" id="voiceChip">🔊 朗读：开</button>
+    <button class="voice-chip" id="autoChip">🔁 自动讲解：关</button>
+  </div>
 
   <details class="parent-box" id="parentBox">
     <summary>👨‍👩‍👦 家长 30 秒速读（点开）</summary>
     <div class="body" id="parentBody"></div>
+    <p style="padding:0 14px 14px;margin:0"><button class="btn small" id="parentSay">🔊 念给家长听</button></p>
   </details>
 
   <h2>① 学一学</h2>
@@ -30,6 +36,7 @@
       <button class="btn" id="nextBtn">下一手 ▶</button>
     </div>
     <p class="muted" id="demoStep"></p>
+    <button class="btn small" id="demoSay" style="width:100%">🔊 听这一段讲解</button>
   </div>
 
   <h2>② 玩一玩</h2>
@@ -80,12 +87,49 @@
   document.getElementById('title').textContent = lesson.emoji + ' 第' + (idx + 1) + '课 ' + lesson.title;
   document.getElementById('goal').textContent = '本课目标：' + lesson.goal;
 
+  /* ---------- 朗读开关（全局）与本节自动讲解 ---------- */
+  var KEY_AUTO = 'weiqi-kids-auto-say';
+  var voiceChip = document.getElementById('voiceChip');
+  var autoChip = document.getElementById('autoChip');
+  var autoSay = false;
+  try { autoSay = localStorage.getItem(KEY_AUTO) === 'on'; } catch (e) { autoSay = false; }
+  function syncVoice() {
+    var on = WQ.Voice.on();
+    voiceChip.textContent = on ? '🔊 朗读：开' : '🔇 朗读：关';
+    voiceChip.className = 'voice-chip' + (on ? ' on' : '');
+    autoChip.textContent = '🔁 自动讲解：' + (autoSay ? '开' : '关');
+    autoChip.className = 'voice-chip' + (autoSay ? ' on' : '');
+    if (!WQ.Voice.supported()) {
+      voiceChip.textContent = '🔇 本设备不支持朗读';
+      voiceChip.className = 'voice-chip';
+    }
+  }
+  voiceChip.onclick = function () {
+    WQ.Voice.toggle();
+    syncVoice();
+    if (WQ.Voice.supported()) WQ.Voice.say('朗读打开啦', { force: true });
+  };
+  autoChip.onclick = function () {
+    autoSay = !autoSay;
+    try { localStorage.setItem(KEY_AUTO, autoSay ? 'on' : 'off'); } catch (e) {}
+    syncVoice();
+    if (autoSay) WQ.Voice.say('自动讲解打开啦，看动画的时候我会讲给你听', { force: true });
+  };
+  document.getElementById('goalSay').onclick = function () {
+    WQ.Voice.say('本课目标。' + lesson.goal, { force: true });
+  };
+  syncVoice();
+
   var t = lesson.tip || {};
   document.getElementById('parentBody').innerHTML =
     '<p><b>本课目标：</b>' + (t.goal || '') + '</p>' +
     '<p><b>一句话讲给孩子：</b>' + (t.say || '') + '</p>' +
     '<p><b>孩子常卡在哪：</b>' + (t.pitfall || '') + '</p>' +
     '<p><b>陪学小活动：</b>' + (t.do || '') + '</p>';
+  document.getElementById('parentSay').onclick = function () {
+    WQ.Voice.say('给家长的话。目标：' + (t.goal || '') + '。可以这样讲：' + (t.say || '') +
+      '。孩子常卡在：' + (t.pitfall || ''), { force: true, rate: 0.8 });
+  };
 
   /* ---------- 学一学：演示播放 ---------- */
   var demoBoard = WQBoard.create(document.getElementById('demoBoard'), { size: 9, interactive: false });
@@ -125,7 +169,12 @@
     document.getElementById('demoNote').textContent = d.note;
     document.getElementById('demoStep').textContent = '第 ' + dStep + ' / ' + d.moves.length + ' 手' +
       (dStep === d.moves.length ? '（演示结束）' : '');
+    if (autoSay) WQ.Voice.say(d.note);   // 自动讲解：跟着动画讲
   }
+  document.getElementById('demoSay').onclick = function () {
+    var d = demos[dIdx];
+    WQ.Voice.say(d.title + '。' + d.note, { force: true });
+  };
 
   function stop() { if (timer) { clearInterval(timer); timer = null; document.getElementById('playBtn').textContent = '▶ 播放'; } }
   document.getElementById('nextBtn').onclick = function () {

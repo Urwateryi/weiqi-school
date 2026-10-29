@@ -64,9 +64,24 @@
   </div>
 
   <div class="card">
-    <h2 style="margin-top:0">⚙ 设置</h2>
+    <h2 style="margin-top:0">⚙ 声音与语音设置</h2>
+    <p><b>音效</b>（落子、提子、答对）</p>
     <button class="btn btn-primary" id="soundBtn">🔊 音效开关</button>
     <p class="muted" id="soundState"></p>
+
+    <p style="margin-top:18px"><b>朗读</b>（题面、讲解、鼓励语都念给孩子听）</p>
+    <div class="btn-row">
+      <button class="btn" id="voiceBtn">🔊 朗读开关</button>
+      <button class="btn" id="voiceTry">▶ 试听一句</button>
+    </div>
+    <p style="margin-top:14px"><b>说话速度</b>（孩子小建议用"慢"）</p>
+    <div class="btn-row">
+      <button class="btn" data-rate="0.7">🐢 慢</button>
+      <button class="btn" data-rate="0.85">🚶 正常</button>
+      <button class="btn" data-rate="1.05">🐇 快</button>
+    </div>
+    <p class="muted" id="voiceState"></p>
+    <p class="muted">小提示：个别手机或旧浏览器没有语音功能，按钮会显示"不支持"，其余功能照常可用。</p>
   </div>
 </div>
 <footer>小围棋 · 幼儿围棋陪学</footer>
@@ -85,6 +100,36 @@
   }
   b.onclick = function () { WQ.Sound.toggle(); sync(); if (WQ.Sound.on()) WQ.Sound.good(); };
   sync();
+
+  var vb = document.getElementById('voiceBtn');
+  var vs = document.getElementById('voiceState');
+  function syncVoice() {
+    var on = WQ.Voice.on();
+    if (!WQ.Voice.supported()) {
+      vb.textContent = '🔇 本设备不支持'; vb.className = 'btn'; vb.disabled = true;
+      vs.textContent = '当前浏览器没有语音合成能力（可换 Chrome / Safari 试试）。';
+      return;
+    }
+    vb.textContent = on ? '🔊 朗读：开' : '🔇 朗读：关';
+    vb.className = 'btn' + (on ? ' btn-green' : '');
+    var r = WQ.Voice.rate();
+    vs.textContent = '朗读已' + (on ? '开启' : '关闭') + '，当前语速：' + (r < 0.8 ? '慢' : r > 1 ? '快' : '正常') + '（' + r + '）。题面、讲解、答对鼓励都会念出来。';
+  }
+  vb.onclick = function () {
+    WQ.Voice.toggle(); syncVoice();
+    WQ.Voice.say('朗读' + (WQ.Voice.on() ? '打开啦' : '关掉了'), { force: true });
+  };
+  document.getElementById('voiceTry').onclick = function () {
+    WQ.Voice.say('你好呀，我们一起下围棋吧！', { force: true });
+  };
+  Array.prototype.forEach.call(document.querySelectorAll('[data-rate]'), function (btn) {
+    btn.onclick = function () {
+      WQ.Voice.setRate(parseFloat(btn.getAttribute('data-rate')));
+      syncVoice();
+      WQ.Voice.say('这个速度听得清楚吗？', { force: true });
+    };
+  });
+  syncVoice();
 })();
 </script>
 </body>

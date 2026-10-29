@@ -210,11 +210,17 @@
       if (extra) extra = '<p style="margin:6px 0 0"><b>🧐 你刚才那手棋：</b>' + extra + '</p>';
       elExplain.innerHTML = (txt ? '<b>📖 讲解：</b>' + txt : '<b>📖 讲解：</b>这道题先自己想一想，做出来再看更有收获。') + (extra || '');
       elExplain.style.display = '';
+      return txt;
     }
     el.querySelector('.q-exp').onclick = function () {
       if (!current) return;
-      if (elExplain.style.display === 'none') showExplain('');
-      else elExplain.style.display = 'none';
+      if (elExplain.style.display === 'none') {
+        var t = showExplain('');
+        if (t) WQ.Voice.say('讲解。' + t);   // 讲解也读出来，不识字也能听
+      } else {
+        WQ.Voice.stop();
+        elExplain.style.display = 'none';
+      }
     };
 
     function isPick(q) {
@@ -286,6 +292,7 @@
       if (ok) {
         WQ.Sound.good();
         WQ.Fx.flyStar(window.innerWidth / 2, window.innerHeight / 2);
+        WQ.praise();
         WQ.Progress.setStar(lid, q.__index != null ? q.__index : qi);
         WQ.Progress.clearWrong(qid);
         say('🎉 ' + (msg || '太棒了！'), 'good');
@@ -295,6 +302,7 @@
       } else {
         WQ.Sound.bad();
         tries++;
+        if (tries === 1) WQ.encourage();
         WQ.Progress.markWrong(qid);
         var extra = analysis ? ' ' + analysis : '';
         var tail = '';
@@ -313,6 +321,7 @@
         board.setInteractive(false);
         say('这一课的三道题都做完啦！去下一课继续闯关吧 🎈', 'good');
         WQ.Sound.cheer();
+        WQ.Voice.say('这一课的题都做完啦，你好厉害！');
         WQ.Fx.confetti();
         if (opts.onFinish) opts.onFinish();
         return;

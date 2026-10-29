@@ -131,16 +131,69 @@
     }
   };
 
-  /* ---------- 读题（给还不识字的孩子） ---------- */
-  function speak(text) {
-    if (!('speechSynthesis' in window)) return;
-    try {
-      window.speechSynthesis.cancel();
-      var u = new SpeechSynthesisUtterance(text);
-      u.lang = 'zh-CN'; u.rate = 0.95;
-      window.speechSynthesis.speak(u);
-    } catch (e) {}
-  }
+  /* ---------- 语音（朗读）：开关 + 语速 + 自动挑中文音色 ---------- */
+  var KEY_VOICE = 'weiqi-kids-voice';
+  var KEY_RATE = 'weiqi-kids-voice-rate';
+  /* 表扬语随机取，避免每次都一样（孩子会更来劲） */
+  var PRAISE = ['答对啦，好厉害！', '太棒了，星星送你！', '全对！你是小棋士！', '赞！这一手真聪明！', '厉害啊，继续加油！'];
+  var ENCOURAGE = ['再试一次，你可以的！', '差一点点，再想一想哦。', '没关系，我们再来！'];
+
+  var Voice = {
+    supported: function () { return typeof window !== 'undefined' && 'speechSynthesis' in window; },
+    on: function () { return lsGet(KEY_VOICE) !== 'off'; },
+    toggle: function () { lsSet(KEY_VOICE, this.on() ? 'off' : 'on'); return this.on(); },
+    rate: function () { return parseFloat(lsGet(KEY_RATE)) || 0.85; },
+    setRate: function (r) { lsSet(KEY_RATE, String(r)); },
+    /* 优先挑选中文女声（不同系统名字不同），挑不到就用默认中文语音 */
+    pick: function () {
+      if (!this.supported()) return null;
+      var vs = window.speechSynthesis.getVoices() || [];
+      if (!vs.length) return null;
+      var zh = vs.filter(function (v) { return (v.lang || '').toLowerCase().indexOf('zh') === 0; });
+      if (!zh.length) return null;
+      var nice = ['tingting', 'ting-ting', 'yaoyao', 'xiaoxiao', 'meijia', 'sinji', 'huihui', 'female'];
+      for (var i = 0; i < nice.length; i++) {
+        for (var j = 0; j < zh.length; j++) {
+          if ((zh[j].name || '').toLowerCase().indexOf(nice[i]) >= 0) return zh[j];
+        }
+      }
+      return zh[0];
+    },
+    stop: function () { if (this.supported()) { try { window.speechSynthesis.cancel(); } catch (e) {} } this.mark(0); },
+    mark: function (secs) {
+      var el = document.querySelector('.tipbar');
+      if (!el) return;
+      if (!secs) { el.classList.remove('talking'); return; }
+      el.classList.add('talking');
+      if (this._t) clearTimeout(this._t);
+      this._t = setTimeout(function () { el.classList.remove('talking'); }, Math.max(700, secs * 1000));
+    },
+    /* 朗读文本；opts.force=true 时忽略开关（用于设置页试听） */
+    say: function (text, opts) {
+      opts = opts || {};
+      if (!text) return;
+      if (!this.supported()) return;
+      if (!opts.force && !this.on()) return;
+      try {
+        window.speechSynthesis.cancel();
+        var u = new SpeechSynthesisUtterance(String(text));
+        var v = this.pick();
+        if (v) u.voice = v;
+        u.lang = (v && v.lang) || 'zh-CN';
+        u.rate = opts.rate || this.rate();
+        u.pitch = 1.08;
+        var self = this;
+        u.onend = function () { self.mark(0); };
+        window.speechSynthesis.speak(u);
+        /* 吉祥物动起来：按字数估算时长 */
+        if (opts.mark !== false) this.mark(Math.min(9, String(text).length / 4.2));
+      } catch (e) {}
+    },
+    praise: function () { this.say(PRAISE[Math.floor(Math.random() * PRAISE.length)]); },
+    encourage: function () { this.say(ENCOURAGE[Math.floor(Math.random() * ENCOURAGE.length)]); }
+  };
+
+  function speak(text, opts) { Voice.say(text, opts); }
 
   /* ---------- 导航外壳 ---------- */
   var NAV = [
@@ -165,6 +218,7 @@
     if (!host) return;
     var html = '<div class="topbar"><div class="inner">' +
       '<a class="logo" href="' + b + 'index.html">小围棋<small>幼儿围棋陪学</small></a>' +
+      '<button class="voice-chip" id="navVoice" title="朗读开关" style="margin-left:auto">🔊</button>' +
       '<span class="stars-badge">⭐ ' + stars + '</span>' +
       '</div></div><div class="navlist">';
     NAV.forEach(function (n) {
@@ -172,6 +226,21 @@
     });
     html += '</div>';
     host.innerHTML = html;
+    /* 顶部朗读开关：任何页面都能一键开关语音 */
+    var vb = host.querySelector('#navVoice');
+    if (vb) {
+      var sync = function () {
+        var on = Voice.on();
+        vb.textContent = on ? '🔊 朗读' : '🔇 静音';
+        vb.className = 'voice-chip' + (on ? ' on' : '');
+        if (!Voice.supported()) { vb.textContent = '🔇 无语音'; vb.className = 'voice-chip'; vb.disabled = true; }
+      };
+      vb.onclick = function () {
+        Voice.toggle(); sync();
+        Voice.say('朗读' + (Voice.on() ? '打开啦' : '关掉了'), { force: true });
+      };
+      sync();
+    }
   }
 
   function param(name) {
@@ -180,7 +249,8 @@
   }
 
   global.WQ = {
-    Progress: Progress, Sound: Sound, Fx: Fx, speak: speak,
+    Progress: Progress, Sound: Sound, Voice: Voice, Fx: Fx, speak: speak,
+    praise: function () { Voice.praise(); }, encourage: function () { Voice.encourage(); },
     shell: shell, param: param, base: base,
     qid: function (lessonId, i) { return lessonId + '#' + i; },
     parseQid: function (qid) { var p = qid.split('#'); return { lessonId: p[0], index: parseInt(p[1], 10) }; }
