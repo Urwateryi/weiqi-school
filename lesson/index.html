@@ -39,6 +39,7 @@
     <p class="muted" id="demoTitle" style="font-size:18px;font-weight:700;color:#4a3520"></p>
     <div class="board-box"><div id="demoBoard"></div></div>
     <p class="muted" id="demoNote"></p>
+    <div class="unit-trick-wrap" id="demoTrick" style="display:none"></div>
     <div class="btn-row">
       <button class="btn" id="prevBtn">◀ 上一手</button>
       <button class="btn btn-primary" id="playBtn">▶ 播放</button>
@@ -78,6 +79,7 @@
 <script src="../data/curriculum.js"></script>
 <script src="../data/explain.js"></script>
 <script src="../data/tricks.js"></script>
+<script src="../data/trickmap.js"></script>
 <script src="../assets/js/board.js"></script>
 <script src="../assets/js/app.js"></script>
 <script src="../assets/js/quiz.js"></script>
@@ -205,9 +207,25 @@
     demoBoard.load({ board: p.board, marks: marks, showLibs: !!d.showLibs, last: p.last, interactive: false });
     document.getElementById('demoTitle').textContent = d.title;
     document.getElementById('demoNote').textContent = d.note;
+    drawDemoTrick();
     document.getElementById('demoStep').textContent = '第 ' + dStep + ' / ' + d.moves.length + ' 手' +
       (dStep === d.moves.length ? '（演示结束）' : '');
     if (autoSay) WQ.Voice.say(d.note);   // 自动讲解：跟着动画讲
+  }
+
+  /* 每个演示棋形旁边的专属巧记 */
+  function drawDemoTrick() {
+    var box = document.getElementById('demoTrick');
+    var txt = (window.WQ_TRICK_MAP || {})[lesson.id + '-d' + dIdx] || '';
+    if (!txt) { box.style.display = 'none'; return; }
+    box.innerHTML = '<div class="unit-trick-inner">' +
+      '<span class="trick-k">🧙 这个棋形怎么理解</span>' +
+      '<p class="unit-trick-text">' + txt + '</p>' +
+      '<button class="btn small" id="demoTrickSay">🔊 念一遍</button></div>';
+    box.style.display = '';
+    document.getElementById('demoTrickSay').onclick = function () {
+      WQ.Voice.say(txt, { force: true });
+    };
   }
   document.getElementById('demoSay').onclick = function () {
     var d = demos[dIdx];

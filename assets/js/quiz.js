@@ -165,6 +165,7 @@
       '<div class="tipbar"><span class="mascot">\u{1F43C}</span><span class="q-text"></span></div>' +
       '<div class="board-box"><div class="q-board"></div></div>' +
       '<div class="tray"><div class="piece black" draggable="true">黑</div><div class="piece white" draggable="true">白</div></div>' +
+      '<div class="unit-trick-wrap q-unit-trick" style="display:none;text-align:left"></div>' +
       '<div class="btn-row"><button class="btn q-say">🔊 读题</button><button class="btn q-hint">💡 提示</button><button class="btn q-exp">📖 看讲解</button><button class="btn q-ans">👀 看答案</button></div>' +
       '<div class="q-explain" style="display:none;text-align:left;background:#fff7e6;border:2px dashed #f0b429;border-radius:14px;padding:12px 14px;margin-top:10px;font-size:16px;line-height:1.7;color:#4a3520"></div>' +
       '<div class="q-extra"></div>' +
@@ -246,6 +247,26 @@
     function isPick(q) {
       return q.type === 'pickPoint' || q.type === 'libPoint' || q.type === 'pickStone' || q.type === 'eyePoint';
     }
+
+    /* ---------- 每道题专属的巧记（贴在这道题旁边） ---------- */
+    var elUnitTrick = el.querySelector('.q-unit-trick');
+    function unitTrick(q) {
+      var lid = q.__lessonId || lessonId;
+      var i = q.__index != null ? q.__index : qi;
+      return (global.WQ_TRICK_MAP || {})[lid + '-q' + i] || '';
+    }
+    function renderUnitTrick(q) {
+      var txt = unitTrick(q);
+      if (!txt) { elUnitTrick.style.display = 'none'; return; }
+      elUnitTrick.innerHTML = '<div class="unit-trick-inner">' +
+        '<span class="trick-k">🧙 这一题怎么想</span>' +
+        '<p class="unit-trick-text">' + txt + '</p>' +
+        '<button class="btn small unit-trick-say">🔊 念一遍</button></div>';
+      elUnitTrick.style.display = '';
+      elUnitTrick.querySelector('.unit-trick-say').onclick = function () {
+        WQ.Voice.say(txt, { force: true });
+      };
+    }
     function say(msg, kind) {
       elText.textContent = msg;
       tipbar.className = 'tipbar' + (kind ? ' ' + kind : '');
@@ -265,6 +286,7 @@
       board.fromSpec(spec, { marks: marks, interactive: !isButton(q), showLibs: q.showLibs || (q.type === 'libPoint' || q.type === 'pickStone') });
       board.setTurn(moverOf(q));
       say(q.prompt, '');
+      renderUnitTrick(q);
       /* 选择/判断题也保留棋盘（显示空盘），避免布局突然收起让孩子以为页面刷新了 */
       el.querySelector('.tray').style.display = isButton(q) ? 'none' : '';
 

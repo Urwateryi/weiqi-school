@@ -341,6 +341,19 @@ th { color: #8a5a1e; font-family: var(--font-display); }
   margin: 8px 0 0; padding: 8px 10px; background: #f2fbf4;
   border-radius: 10px; border: 1px dashed var(--green); font-size: 16px;
 }
+/* 贴在每个演示 / 每道题旁边的专属巧记 */
+.unit-trick-wrap { margin: 10px 0 0; }
+.unit-trick-inner {
+  background: linear-gradient(170deg, #f3fbf6, #fffdf7);
+  border: 2px solid #bfe3ce;
+  border-left: 8px solid var(--green);
+  border-radius: 14px;
+  padding: 10px 12px;
+}
+.unit-trick-text {
+  margin: 6px 0 0; font-size: 16px; line-height: 1.75; color: #2c4a3e;
+}
+.unit-trick-inner .btn { margin-top: 8px; }
 .search-box {
   width: 100%; box-sizing: border-box; font-size: 18px; padding: 12px 14px;
   border: 3px solid #f2dcb4; border-radius: 14px; background: #fffdf7;
